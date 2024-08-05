@@ -1,0 +1,80 @@
+// Define motor control pins for Motor 1
+const int motor1Pin1 = 40;
+const int motor1Pin2 = 41;
+const int motor1Enable = 44;
+
+// Define motor control pins for Motor 2
+const int motor2Pin1 = 42;
+const int motor2Pin2 = 43;
+const int motor2Enable = 46;
+
+// PID constants
+const double Kp = 20;
+const double Ki = 0;
+const double Kd = 0.005;
+
+// Time variables
+double dt = 0;
+double now;
+double last_time = 0;
+
+// PID variables
+double integral = 0;
+double Output;
+double lastError = 0;
+
+const double u = 150;
+
+double pidControl(double distanceDifference) {
+    double derivative = (distanceDifference - lastError) / dt;
+    integral += distanceDifference * dt;
+
+    Output = Kp * distanceDifference + Ki * integral + Kd * derivative;
+
+    lastError = distanceDifference;
+    return Output;
+}
+
+void adjustMotorSpeed(int motorEnablePin1, int motorEnablePin2, double output) {
+    output = constrain(output, -100, 100);
+    int speed1 = u - output; // Output directly added to initial speed
+    int speed2 = u + output;
+    analogWrite(motorEnablePin1, speed1);
+    analogWrite(motorEnablePin2, speed2);
+    Serial.println(output);
+}
+
+void setup() {
+    Serial.begin(9600);
+
+    // Motor control setup
+    pinMode(motor1Pin1, OUTPUT);
+    pinMode(motor1Pin2, OUTPUT);
+    pinMode(motor1Enable, OUTPUT);
+
+    pinMode(motor2Pin1, OUTPUT);
+    pinMode(motor2Pin2, OUTPUT);
+    pinMode(motor2Enable, OUTPUT);
+
+    // Move forward direction
+    digitalWrite(motor1Pin1, HIGH);
+    digitalWrite(motor1Pin2, LOW);
+    digitalWrite(motor2Pin1, HIGH);
+    digitalWrite(motor2Pin2, LOW);
+}
+
+void loop() {
+    if (Serial.available() > 0) {
+        now = millis();
+        dt = (now - last_time) / 1000.0; // Convert to seconds
+        last_time = now;
+
+        String data = Serial.readStringUntil('\n');
+        double distanceDifference = data.toDouble();
+
+        double output = pidControl(distanceDifference);
+        adjustMotorSpeed(motor1Enable, motor2Enable, output);
+
+        delay(10); // Delay for stability
+    }
+}
