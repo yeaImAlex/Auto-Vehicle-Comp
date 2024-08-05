@@ -1,0 +1,57 @@
+import cv2
+import numpy as np
+import serial
+import time
+
+def process_image(frame):
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    blur = cv2.GaussianBlur(gray, (5, 5), 0)
+    edges = cv2.Canny(blur, 50, 150)
+    return edges
+
+def detect_lane_areas(edges):
+    contours, _ = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    left_area, right_area = 0, 0
+    frame_width = edges.shape[1]
+    
+    for contour in contours:
+        x, y, w, h = cv2.boundingRect(contour)
+        if x < frame_width // 2:  # Left side
+            left_area += w * h
+        else:  # Right side
+            right_area += w * h
+    
+    return left_area, right_area
+
+def main():
+    camera = cv2.VideoCapture(0)
+    arduino = serial.Serial('/dev/ttyACM0', 9600)  # Update the port as needed
+    time.sleep(2)  # Wait for the Arduino to initialize
+
+    while True:
+        ret, frame = camera.read()
+        if not ret:
+            break
+
+        edges = process_image(frame)
+        left_area, right_area = detect_lane_areas(edges)
+        
+        if left_area > right_area:
+            deviation = left_area - right_area
+            arduino.write(f"R{deviation}\n".encode())  # Right wheel faster
+        else:
+            deviation = right_area - left_area
+            arduino.write(f"L{deviation}\n".encode())  # Left wheel faster
+
+        cv2.imshow('Frame', frame)
+        cv2.imshow('Edges', edges)
+        
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    camera.release()
+    cv2.destroyAllWindows()
+    arduino.close()
+
+if __name__ == '__main__':
+    main()
