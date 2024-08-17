@@ -1,0 +1,50 @@
+import cv2 as cv
+import numpy as np
+
+# Open the video file
+vidcap = cv.VideoCapture(r"C:\Users\ycwon\Downloads\myVideo.mp4")
+
+while True:
+    # Read a frame from the video
+    success, frame = vidcap.read()
+    
+    # Break the loop if there are no more frames
+    if not success:
+        break
+
+    # Resize the frame to 480x640 (height, width)
+    frame_resized = cv.resize(frame, (480, 640))
+
+    # Define the coordinates of the four points for the perspective transform
+    tl = [120, 260]  # Top-left corner
+    bl = [30, 320]   # Bottom-left corner
+    tr = [360, 260]  # Top-right corner
+    br = [450, 320]  # Bottom-right corner
+
+    # Draw circles on the image at the selected points (for visualization)
+    cv.circle(frame_resized, tuple(tl), 5, (0, 255, 0), -1)
+    cv.circle(frame_resized, tuple(bl), 5, (0, 255, 0), -1)
+    cv.circle(frame_resized, tuple(tr), 5, (0, 255, 0), -1)
+    cv.circle(frame_resized, tuple(br), 5, (0, 255, 0), -1)
+
+    # Apply Geometrical Transformation
+    pts1 = np.float32([tl, bl, tr, br])  # Source points
+    pts2 = np.float32([[0, 0], [0, 480], [640, 0], [640, 480]])  # Destination points
+
+    # Get the perspective transformation matrix
+    matrix = cv.getPerspectiveTransform(pts1, pts2)
+
+    # Apply the perspective transformation
+    transformed_frame = cv.warpPerspective(frame_resized, matrix, (640, 480))
+
+    # Display the original and transformed frames
+    cv.imshow("Original Frame", frame_resized)
+    cv.imshow("Transformed Frame (Bird's Eye View)", transformed_frame)
+
+    # Wait for 'ESC' key press to exit or go to next frame after 1 ms
+    if cv.waitKey(1) == 27:  # ESC key
+        break
+
+# Release the video capture object and close all OpenCV windows
+vidcap.release()
+cv.destroyAllWindows()
