@@ -1,0 +1,38 @@
+import cv2 as cv
+import numpy as np
+
+# Load the image
+image = cv.imread(r"C:\Users\ycwon\Downloads\diy road.jpeg")
+
+# Resize the image to 640x480
+frame = cv.resize(image, (480, 640))
+
+# Define the coordinates of the four points for the perspective transform
+tl = [120, 260]  # Top-left corner
+bl = [30, 320]   # Bottom-left corner
+tr = [360, 260]  # Top-right corner
+br = [450, 320]  # Bottom-right corner
+
+# Draw circles on the image at the selected points (for visualization)
+cv.circle(frame, tuple(tl), 5, (0, 255, 0), -1)
+cv.circle(frame, tuple(bl), 5, (0, 255, 0), -1)
+cv.circle(frame, tuple(tr), 5, (0, 255, 0), -1)
+cv.circle(frame, tuple(br), 5, (0, 255, 0), -1)
+
+# Apply Geometrical Transformation
+pts1 = np.float32([tl, bl, tr, br])  # Source points
+pts2 = np.float32([[0, 0], [0, 480], [640, 0], [640, 480]])  # Destination points
+
+# Get the perspective transformation matrix
+matrix = cv.getPerspectiveTransform(pts1, pts2)
+
+# Apply the perspective transformation
+transformed_frame = cv.warpPerspective(frame, matrix, (640, 480))
+
+# Display the original and transformed images
+cv.imshow("Original Image", frame)
+cv.imshow("Transformed Image (Bird's Eye View)", transformed_frame)
+
+# Wait for 'ESC' key press to exit
+if cv.waitKey(0) == 27:  # ESC key
+    cv.destroyAllWindows()
