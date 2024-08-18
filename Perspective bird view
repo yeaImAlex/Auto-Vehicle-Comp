@@ -1,0 +1,43 @@
+# main_script.py
+
+import cv2
+import numpy as np
+from PerspectiveTransformation import *  # Import the class
+
+# Instantiate the PerspectiveTransformation class
+perspective_transformer = PerspectiveTransformation()
+
+# Open the video file
+video_path = r"C:\Users\ycwon\Downloads\road video.mp4"
+vidcap = cv2.VideoCapture(video_path)
+
+# Check if the video file opened successfully
+if not vidcap.isOpened():
+    print("Error: Could not open video file.")
+    exit()
+
+# Loop over the frames of the video
+while True:
+    success, frame = vidcap.read()
+
+    # Break the loop if there are no more frames
+    if not success:
+        break
+
+    # Apply the perspective transformation to the current frame
+    transformed_frame = perspective_transformer.forward(frame)
+
+    # Display the original and transformed frames side by side
+    #combined_frame = np.hstack((frame, transformed_frame))
+
+    # Show the combined frame
+    cv2.imshow("Original", frame)
+    cv2.imshow("Original (Left) vs Top-Down View (Right)", transformed_frame)
+
+    # Wait for a key press and exit on 'ESC' key
+    if cv2.waitKey(30) & 0xFF == 27:  # ESC key
+        break
+
+# Release the video capture object and close all OpenCV windows
+vidcap.release()
+cv2.destroyAllWindows()
