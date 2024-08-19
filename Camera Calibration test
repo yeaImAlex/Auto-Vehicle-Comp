@@ -1,0 +1,50 @@
+# main_script.py
+
+import cv2
+import numpy as np
+from PerspectiveTransformation import *
+from CameraCalibration import *  # Import the CameraCalibration class
+
+# Initialize the camera calibration with chessboard images
+image_dir = r"C:\Users\ycwon\Documents\Imagetest"  # Replace with the actual path to your chessboard images
+nx, ny = 9, 6  # Replace with the actual number of corners in the chessboard
+CameraCalibration = CameraCalibration(image_dir, nx, ny)
+
+# Instantiate the PerspectiveTransformation class
+perspective_transformer = PerspectiveTransformation()
+
+# Open the video file
+video_path = r"C:\Users\ycwon\Downloads\road video.mp4"
+vidcap = cv2.VideoCapture(video_path)
+
+# Check if the video file opened successfully
+if not vidcap.isOpened():
+    print("Error: Could not open video file.")
+    exit()
+
+# Loop over the frames of the video
+while True:
+    success, frame = vidcap.read()
+
+    # Break the loop if there are no more frames
+    if not success:
+        break
+
+    # Calibrate the frame (undistort)
+    undistorted_frame = CameraCalibration.undistort(frame)
+
+    # Apply the perspective transformation to the calibrated (undistorted) frame
+    transformed_frame = perspective_transformer.forward(undistorted_frame)
+
+    # Display the original, undistorted, and transformed frames side by side
+    cv2.imshow("Original", frame)
+    cv2.imshow("Undistorted", undistorted_frame)
+    cv2.imshow("Top-Down View", transformed_frame)
+
+    # Wait for a key press and exit on 'ESC' key
+    if cv2.waitKey(30) & 0xFF == 27:  # ESC key
+        break
+
+# Release the video capture object and close all OpenCV windows
+vidcap.release()
+cv2.destroyAllWindows()
