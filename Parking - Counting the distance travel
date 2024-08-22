@@ -1,0 +1,43 @@
+// Encoder and motor setup
+const int encoderPin = 2;  // Pin connected to the encoder output
+const int pulsesPerRevolution = 20;  // Set according to your encoder's specification
+const float wheelDiameter = 0.065;  // Diameter of the wheel in meters (example: 65 mm)
+
+// Variables to keep track of pulses and distance
+volatile int pulseCount = 0;
+float distanceTraveled = 0.0;
+
+void setup() {
+  // Set up the encoder pin as an input
+  pinMode(encoderPin, INPUT);
+
+  // Attach interrupt to the encoder pin
+  attachInterrupt(digitalPinToInterrupt(encoderPin), countPulses, RISING);
+
+  // Serial monitor for output
+  Serial.begin(9600);
+}
+
+void loop() {
+  // Calculate the number of wheel revolutions
+  float revolutions = (float)pulseCount / pulsesPerRevolution;
+
+  // Calculate the distance traveled in meters
+  distanceTraveled = revolutions * PI * wheelDiameter;
+
+  // Print the distance traveled
+  Serial.print("Distance Traveled: ");
+  Serial.print(distanceTraveled, 2);  // Print with two decimal places
+  Serial.println(" meters");
+
+  // Reset pulse count after calculation (optional)
+  pulseCount = 0;
+
+  // Wait for a certain period before calculating again
+  delay(1000);
+}
+
+// Interrupt service routine (ISR) to count encoder pulses
+void countPulses() {
+  pulseCount++;
+}
