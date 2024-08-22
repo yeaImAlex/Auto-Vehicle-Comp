@@ -1,0 +1,72 @@
+// Encoder and motor setup
+const int encoderPin = 2;  // Pin connected to the encoder output
+const int motorPin = 9;    // PWM pin connected to the motor driver
+const int pulsesPerRevolution = 20;  // Set according to your encoder's specification
+const float wheelDiameter = 0.065;   // Diameter of the wheel in meters (example: 65 mm)
+const int controlInterval = 100;     // Control interval in milliseconds
+const float maxSpeed = 0.5;          // Maximum allowed speed in meters/second
+const float targetSpeed = 0.3;       // Target speed when slowing down (m/s)
+
+// Variables to keep track of pulses and time
+volatile int pulseCount = 0;
+unsigned long previousMillis = 0;
+float speed = 0.0;
+
+void setup() {
+  // Set up the encoder pin as an input
+  pinMode(encoderPin, INPUT);
+
+  // Attach interrupt to the encoder pin
+  attachInterrupt(digitalPinToInterrupt(encoderPin), countPulses, RISING);
+
+  // Set up motor control pin as output
+  pinMode(motorPin, OUTPUT);
+
+  // Initialize serial communication
+  Serial.begin(9600);
+
+  // Start motor at full speed (255 is full PWM value)
+  analogWrite(motorPin, 255);
+}
+
+void loop() {
+  // Get the current time
+  unsigned long currentMillis = millis();
+
+  // Check if control interval has passed
+  if (currentMillis - previousMillis >= controlInterval) {
+    // Calculate time difference in seconds
+    float timeInterval = (currentMillis - previousMillis) / 1000.0;
+
+    // Calculate speed in meters/second
+    float revolutions = (float)pulseCount / pulsesPerRevolution;
+    speed = (revolutions * PI * wheelDiameter) / timeInterval;
+
+    // Print the current speed
+    Serial.print("Speed: ");
+    Serial.print(speed, 2);  // Print with two decimal places
+    Serial.println(" m/s");
+
+    // Check if speed exceeds maximum allowed speed
+    if (speed > maxSpeed) {
+      // Reduce motor speed to maintain target speed
+      int pwmValue = map(targetSpeed, 0, maxSpeed, 0, 255);
+      analogWrite(motorPin, pwmValue);
+      Serial.print("Speed limit exceeded! Slowing down to ");
+      Serial.print(targetSpeed);
+      Serial.println(" m/s");
+    } else {
+      // If speed is below the limit, run motor at full speed
+      analogWrite(motorPin, 255);
+    }
+
+    // Reset pulse count and update time
+    pulseCount = 0;
+    previousMillis = currentMillis;
+  }
+}
+
+// Interrupt service routine (ISR) to count encoder pulses
+void countPulses() {
+  pulseCount++;
+}
