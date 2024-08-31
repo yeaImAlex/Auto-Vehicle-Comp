@@ -1,0 +1,63 @@
+#include <Servo.h>
+#include <TimedAction.h>
+
+// Define Pins
+const int STEERING_SERVO_PIN = 9; // Servo connected to pin 9
+const int X_AXIS_PIN = A0;         // X-axis input connected to analog pin A0
+
+// Servo Object
+Servo steeringServo;
+
+// Desired Steering Angle
+int desiredSteeringAngle = 90; // Start at center position
+
+// Function Declarations
+void InputTaskCode();
+void OutputTaskCode();
+
+// Initialize Timed Actions (interval in milliseconds)
+TimedAction InputTask(100, InputTaskCode);   // Every 100ms
+TimedAction OutputTask(100, OutputTaskCode); // Every 100ms
+
+void setup() {
+    // Initialize Servo
+    steeringServo.attach(STEERING_SERVO_PIN);
+    steeringServo.write(desiredSteeringAngle); // Initialize to center
+
+    // Initialize X-Axis Input Pin
+    pinMode(X_AXIS_PIN, INPUT);
+
+    // Enable Timed Tasks
+    InputTask.enable();
+    OutputTask.enable();
+
+    // Initialize Serial Monitor (optional for debugging)
+    Serial.begin(115200);
+}
+
+void loop() {
+    // Check and execute timed tasks
+    InputTask.check();
+    OutputTask.check();
+}
+
+// Input Task: Read X-Axis and determine desired steering angle
+void InputTaskCode() {
+    int xValue = analogRead(X_AXIS_PIN); // Read x-axis value (0-1023)
+
+    // Map x-axis value to steering angle (e.g., 0-180 degrees)
+    // Assuming xValue ranges from 0 (full left) to 1023 (full right)
+    desiredSteeringAngle = map(xValue, 0, 1023, 45, 135); // Adjust range as needed
+
+    // Debugging Output
+    Serial.print("X-Axis Value: ");
+    Serial.print(xValue);
+    Serial.print(" -> Steering Angle: ");
+    Serial.println(desiredSteeringAngle);
+}
+
+// Output Task: Set the steering angle based on desired value
+void OutputTaskCode() {
+    // Set the servo to the desired steering angle
+    steeringServo.write(desiredSteeringAngle);
+}
