@@ -1,0 +1,115 @@
+#include <Servo.h>
+
+class MyRobocar {
+  private:
+    int leftFrontMotorPin, rightFrontMotorPin, backMotorPin;
+    int currentSpeed;
+    Servo steeringServo;
+    float Kp, Ki, Kd;
+    float previousError = 0;
+    float integral = 0;
+    int minSteeringAngle, maxSteeringAngle;
+    unsigned long lastTime;
+
+  public:
+    // Constructor to initialize the motor and steering control
+    MyRobocar(int leftPin, int rightPin, int backPin, int servoPin, float Kp, float Ki, float Kd, int minAngle = 0, int maxAngle = 180) {
+      leftFrontMotorPin = leftPin;
+      rightFrontMotorPin = rightPin;
+      backMotorPin = backPin;
+      this->Kp = Kp;
+      this->Ki = Ki;
+      this->Kd = Kd;
+      minSteeringAngle = minAngle;
+      maxSteeringAngle = maxAngle;
+      steeringServo.attach(servoPin);
+      pinMode(leftFrontMotorPin, OUTPUT);
+      pinMode(rightFrontMotorPin, OUTPUT);
+      pinMode(backMotorPin, OUTPUT);
+      lastTime = millis();
+    }
+
+    // Function to control the speed of the front wheels
+    void ControlFrontSpeed(int speed) {
+      currentSpeed = speed;
+      analogWrite(leftFrontMotorPin, speed);
+      analogWrite(rightFrontMotorPin, speed);
+    }
+
+    // Function to control the speed of the back wheel
+    void ControlBackSpeed(int speed) {
+      analogWrite(backMotorPin, speed);
+    }
+
+    // Function to calculate and set the PID-controlled steering angle
+    void SetSteeringAnglePID(int desiredAngle, int currentAngle) {
+      unsigned long currentTime = millis();
+      float deltaTime = (currentTime - lastTime) / 1000.0; // Convert to seconds
+
+      // Calculate error
+      float error = desiredAngle - currentAngle;
+
+      // Calculate integral
+      integral += error * deltaTime;
+
+      // Calculate derivative
+      float derivative = (error - previousError) / deltaTime;
+
+      // Calculate PID output
+      float output = (Kp * error) + (Ki * integral) + (Kd * derivative);
+
+      // Clamp output to the steering limits
+      int steeringAngle = constrain(currentAngle + output, minSteeringAngle, maxSteeringAngle);
+
+      // Set the servo position
+      steeringServo.write(steeringAngle);
+
+      // Update previous values
+      previousError = error;
+      lastTime = currentTime;
+    }
+
+    // Function to stop the steering (set to center position)
+    void StopSteering() {
+      int centerPosition = (minSteeringAngle + maxSteeringAngle) / 2;
+      steeringServo.write(centerPosition);
+    }
+
+    // Function to reset PID values
+    void ResetPID() {
+      integral = 0;
+      previousError = 0;
+    }
+
+    // Function to reset steering to center
+    void ResetSteering() {
+      StopSteering();
+      ResetPID();
+    }
+
+    // Function to get the current speed (for demo purposes, could be more complex)
+    float GetSpeed() {
+      return currentSpeed;
+    }
+
+    // Function to get the distance using an ultrasonic sensor (dummy implementation)
+    float GetDistance() {
+      // This function should be implemented to get real sensor data
+      // Placeholder: returning a dummy value
+      return 100.0; // Assume 100 cm for now
+    }
+
+    // Function to get brightness using an LDR sensor (dummy implementation)
+    int GetBrightness() {
+      // This function should be implemented to get real sensor data
+      // Placeholder: returning a dummy value
+      return analogRead(A0); // Assuming LDR is connected to A0
+    }
+
+    // Function to get traveled distance using encoder motor (dummy implementation)
+    float GetTraveledDistance() {
+      // This function should be implemented to get real encoder data
+      // Placeholder: returning a dummy value
+      return 50.0; // Assume 50 cm for now
+    }
+};
